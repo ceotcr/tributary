@@ -33,9 +33,20 @@ def record_engine_temperature():
     logger.info(f"record request successful")
     return {"success": True}, 200
 
-# practically identical to the above
-
 
 @app.route('/collect', methods=['POST'])
 def collect_engine_temperature():
-    return {"success": True}, 200
+    logger.info(f"(*) collect request (*)")
+
+    database = redis.Redis(host="redis", port=6379,
+                           db=0, decode_responses=True)
+    engine_temperature_values = database.lrange(DATA_KEY, 0, -1)
+    logger.info(
+        f"Last Engine Temparatures: {engine_temperature_values}")
+    latest = engine_temperature_values[0]
+    logger.info(f"Latest engine temperature is: {latest}")
+    avg = sum([float(x) for x in engine_temperature_values]) / \
+        len(engine_temperature_values)
+    logger.info(f"Average engine temperature is: {avg}")
+
+    return {"current_engine_temperature": latest, "average_engine_temperature": avg}, 200
